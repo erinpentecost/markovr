@@ -4,10 +4,14 @@ version = "0.1.0"
 authors = ["erinpentecost <erin@pentecost.email>"]
 edition = "2018"
 publish = true
-description = "Sorting algorithm implementations."
+description = "Higher-order Markov Chains."
 readme = "README.md"
 repository = "https://github.com/erinpentecost/markovr"
 license-file = "LICENSE.md"
 
 [dependencies]
-rand = "0.7.3"
+cfg-if = "0.1.10"
+rand = { version = "0.7.3", optional = true}
+
+[features]
+default = ["rand"]

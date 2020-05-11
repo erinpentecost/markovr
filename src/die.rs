@@ -1,7 +1,7 @@
+use cfg_if::cfg_if;
 use std::convert::TryFrom;
 
-extern crate rand;
-
+#[cfg(feature = "rand")]
 use rand::Rng;
 
 /// A side, or face, of a die.
@@ -167,7 +167,7 @@ impl WeightedDie {
         self.update_running_weights();
     }
 
-    /// roll some element from the collection.
+    /// Select some element from the collection.
     /// This doesn't remove the element.
     /// roll is an optional param when you don't want
     /// to rely on a random value.
@@ -183,8 +183,14 @@ impl WeightedDie {
         let roll_result: u64 = match roll {
             Some(r) => r % total_weight,
             None => {
-                let mut rng = rand::thread_rng();
-                rng.gen_range(0, total_weight) as u64
+                cfg_if! {
+                    if #[cfg(feature = "rand")] {
+                        let mut rng = rand::thread_rng();
+                        rng.gen_range(0, total_weight) as u64
+                    } else {
+                        panic!("'roll' param is not optional when the 'rand' feature is off.");
+                    }
+                }
             }
         };
 

@@ -126,6 +126,7 @@ mod tests {
             .enumerate()
             .map(|(i, _x)| i as u64)
             .collect();
+
         for i in m.order..encoded.len() {
             m.train(&[encoded[i - 1], encoded[i]], 1);
         }
@@ -156,6 +157,7 @@ mod tests {
             .enumerate()
             .map(|(i, _x)| i as u64)
             .collect();
+
         for i in m.order..encoded.len() {
             m.train(&[encoded[i - 2], encoded[i - 1], encoded[i]], 1);
         }
