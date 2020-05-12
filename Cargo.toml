@@ -1,6 +1,6 @@
 [package]
 name = "markovr"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["erinpentecost <erin@pentecost.email>"]
 edition = "2018"
 publish = true
