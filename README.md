@@ -1,4 +1,4 @@
-# Higher-order Markov Chains
+# [markovr](https://crates.io/crates/markovr): Higher-order Markov Chains
 
 Higher-order Markov Chains have longer memories than your typical Markov Chain,
 which looks back only 1 element.

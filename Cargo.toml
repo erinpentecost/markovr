@@ -1,12 +1,13 @@
 [package]
 name = "markovr"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["erinpentecost <erin@pentecost.email>"]
 edition = "2018"
 publish = true
 description = "Higher-order Markov Chains."
 readme = "README.md"
 repository = "https://github.com/erinpentecost/markovr"
+license = "GPL-3.0"
 license-file = "LICENSE.md"
 
 [dependencies]
