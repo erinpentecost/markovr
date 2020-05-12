@@ -3,8 +3,11 @@ use cfg_if::cfg_if;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
+pub trait Element: Eq + PartialEq + Copy + Clone + std::hash::Hash {}
+impl<T> Element for T where T: Eq + PartialEq + Copy + Clone + std::hash::Hash {}
+
 /// Variable-order Markov chain.
-pub struct MarkovChain {
+pub struct MarkovChain<T: Element> {
     // the 'memory' for the MarkovChain chain.
     // 1 is the typical MarkovChain chain that only looks
     // back 1 element.
@@ -12,10 +15,10 @@ pub struct MarkovChain {
     order: usize,
     // the number of elements in the key should
     // exactly equal the order of the MarkovChain chain.
-    probability_map: HashMap<Vec<u64>, die::WeightedDie>,
+    probability_map: HashMap<Vec<T>, die::WeightedDie<T>>,
 }
 
-impl MarkovChain {
+impl<T: Element> MarkovChain<T> {
     /// Creates a new MarkovChain.
     ///
     /// 'order' is the order of the Markov Chain.
@@ -32,11 +35,12 @@ impl MarkovChain {
     pub fn new(order: usize) -> Self {
         MarkovChain {
             order,
-            probability_map: HashMap::new(),
+            probability_map: HashMap::<Vec<T>, die::WeightedDie<T>>::new(),
         }
     }
 
-    fn to_key(order: usize, view: &[u64]) -> Vec<u64> {
+    /// Truncates elements as needed
+    fn to_key(order: usize, view: &[T]) -> Vec<T> {
         view.into_iter()
             .skip(view.len() - order)
             .take(order)
@@ -55,7 +59,7 @@ impl MarkovChain {
     /// 'weight_delta' should be the number of times we're
     /// loading this view into the model (typically 1 at
     /// a time).
-    pub fn train(&mut self, view: &[u64], result: u64, weight_delta: i32) {
+    pub fn train(&mut self, view: &[T], result: T, weight_delta: i32) {
         let key = MarkovChain::to_key(self.order, view);
 
         self.probability_map
@@ -78,7 +82,7 @@ impl MarkovChain {
     /// only the last self.order elements are looked at.
     ///
     /// rand_val allows for a deterministic result, if supplied.
-    pub fn generate_deterministic(&self, view: &[u64], rand_val: u64) -> Option<u64> {
+    pub fn generate_deterministic(&self, view: &[T], rand_val: u64) -> Option<T> {
         let key = MarkovChain::to_key(self.order, view);
 
         match self.probability_map.get(&key) {
@@ -93,7 +97,7 @@ impl MarkovChain {
             ///
             /// view is the sliding window of the latest elements.
             /// only the last self.order elements are looked at.
-            pub fn generate(&self, view: &[u64]) -> Option<u64> {
+            pub fn generate(&self, view: &[T]) -> Option<T> {
                 let key = MarkovChain::to_key(self.order, view);
 
                 match self.probability_map.get(&key) {
@@ -106,7 +110,7 @@ impl MarkovChain {
 
     /// Returns the probability of getting 'result', given
     /// 'view'.
-    pub fn probability(&self, view: &[u64], result: u64) -> f32 {
+    pub fn probability(&self, view: &[T], result: T) -> f32 {
         let key = MarkovChain::to_key(self.order, view);
 
         let map = self.probability_map.get_key_value(&key);

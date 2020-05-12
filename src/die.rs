@@ -4,35 +4,37 @@ use std::convert::TryFrom;
 #[cfg(feature = "rand")]
 use rand::Rng;
 
+use super::Element;
+
 /// A side, or face, of a die.
 /// element is a unique id for the face.
 /// weight contributes to the chance of this
 /// face being selected, compared to others.
 /// R weight of 0 means the face won't ever be rolled.
 #[derive(Copy, Clone, Eq, PartialEq)]
-pub struct WeightedSide {
-    pub element: u64,
+pub struct WeightedSide<T: Element> {
+    pub element: T,
     pub weight: u32,
 }
 
 /// This is a weighted die. You can add sides (faces),
 /// change their weights, and so on.
 #[derive(Clone, Eq, PartialEq)]
-pub struct WeightedDie {
+pub struct WeightedDie<T: Element> {
     /// An element and its probabalistic weight,
     /// compared with its peers.
-    items: Vec<WeightedSide>,
+    items: Vec<WeightedSide<T>>,
 
     /// Caching running weights in order to support
     /// O(lg n) rolls.
     running_weight: Vec<u64>,
 }
 
-impl WeightedDie {
+impl<T: Element> WeightedDie<T> {
     /// Create a new weighted die with the given sides (faces).
     /// Runs in O(n).
-    pub fn new(items: Vec<WeightedSide>) -> Self {
-        let mut tmp = WeightedDie {
+    pub fn new(items: Vec<WeightedSide<T>>) -> Self {
+        let mut tmp = WeightedDie::<T> {
             items: items,
             running_weight: vec![],
         };
@@ -40,7 +42,7 @@ impl WeightedDie {
         tmp
     }
 
-    fn find_first_mut(&mut self, element: u64) -> Option<(usize, &mut WeightedSide)> {
+    fn find_first_mut(&mut self, element: T) -> Option<(usize, &mut WeightedSide<T>)> {
         let found_val = self
             .items
             .iter_mut()
@@ -50,7 +52,7 @@ impl WeightedDie {
         found_val
     }
 
-    fn find_first(&self, element: u64) -> Option<(usize, &WeightedSide)> {
+    fn find_first(&self, element: T) -> Option<(usize, &WeightedSide<T>)> {
         let found_val = self
             .items
             .iter()
@@ -83,7 +85,7 @@ impl WeightedDie {
     /// Returns the probability of rolling the selected side.
     /// If the die does not contain the side, returns 0.
     /// This will be off since floats aren't exact sometimes.
-    pub fn get_probability(&self, element: u64) -> f32 {
+    pub fn get_probability(&self, element: T) -> f32 {
         match self.find_first(element) {
             Some(v) => {
                 // if there is some found element, then
@@ -113,7 +115,7 @@ impl WeightedDie {
     /// If the new weight would be less than 0, removes
     /// the element from the collection.
     /// Runs in O(n).
-    pub fn modify(&mut self, elem: u64, weight_delta: i32) {
+    pub fn modify(&mut self, elem: T, weight_delta: i32) {
         let found = self.find_first_mut(elem);
         let abs_delta_try = u32::try_from(weight_delta.abs()).ok();
         match found {
@@ -142,7 +144,7 @@ impl WeightedDie {
                 if weight_delta > 0 {
                     match abs_delta_try {
                         Some(abs_delta) => {
-                            self.items.push(WeightedSide {
+                            self.items.push(WeightedSide::<T> {
                                 element: elem,
                                 weight: abs_delta,
                             });
@@ -164,7 +166,7 @@ impl WeightedDie {
     /// roll is an optional param when you don't want
     /// to rely on a random value.
     /// Runs in O(lg n).
-    pub fn roll(&self, roll: Option<u64>) -> Option<u64> {
+    pub fn roll(&self, roll: Option<u64>) -> Option<T> {
         // If there is nothing to roll, return nothing.
         if self.items.len() == 0 {
             return None;
@@ -221,30 +223,34 @@ impl WeightedDie {
 mod tests {
     use super::*;
 
+    fn w(n: u64) -> Option<u64> {
+        Some(n)
+    }
+
     #[test]
     fn empty() {
-        let c = WeightedDie::new(vec![]);
+        let c: WeightedDie<u64> = WeightedDie::new(vec![]);
         assert_eq!(c.roll(Some(0)), None);
     }
 
     #[test]
     fn one_from_constructor() {
-        let c = WeightedDie::new(vec![WeightedSide {
+        let c: WeightedDie<u64> = WeightedDie::new(vec![WeightedSide::<u64> {
             element: 99,
             weight: 3,
         }]);
-        assert_eq!(c.roll(Some(0)), Some(99));
-        assert_eq!(c.roll(Some(1)), Some(99));
-        assert_eq!(c.roll(Some(2)), Some(99));
+        assert_eq!(c.roll(Some(0)), w(99));
+        assert_eq!(c.roll(Some(1)), w(99));
+        assert_eq!(c.roll(Some(2)), w(99));
     }
 
     #[test]
     fn one_from_insertion() {
         let mut c = WeightedDie::new(vec![]);
         c.modify(99, 3);
-        assert_eq!(c.roll(Some(0)), Some(99));
-        assert_eq!(c.roll(Some(1)), Some(99));
-        assert_eq!(c.roll(Some(2)), Some(99));
+        assert_eq!(c.roll(Some(0)), w(99));
+        assert_eq!(c.roll(Some(1)), w(99));
+        assert_eq!(c.roll(Some(2)), w(99));
     }
 
     #[test]
@@ -255,9 +261,9 @@ mod tests {
 
         assert_eq!(c.items.len(), 2);
 
-        assert_eq!(c.roll(Some(0)), Some(1));
-        assert_eq!(c.roll(Some(1)), Some(2));
-        assert_eq!(c.roll(Some(2)), Some(1)); // rolled over
+        assert_eq!(c.roll(Some(0)), w(1));
+        assert_eq!(c.roll(Some(1)), w(2));
+        assert_eq!(c.roll(Some(2)), w(1)); // rolled over
     }
 
     #[test]
@@ -272,13 +278,13 @@ mod tests {
 
         assert_eq!(c.items.len(), 6);
 
-        assert_eq!(c.roll(Some(0)), Some(1));
-        assert_eq!(c.roll(Some(1)), Some(2));
-        assert_eq!(c.roll(Some(2)), Some(3));
-        assert_eq!(c.roll(Some(3)), Some(4));
-        assert_eq!(c.roll(Some(4)), Some(5));
-        assert_eq!(c.roll(Some(5)), Some(6));
-        assert_eq!(c.roll(Some(6)), Some(1)); // rolled over
+        assert_eq!(c.roll(Some(0)), w(1));
+        assert_eq!(c.roll(Some(1)), w(2));
+        assert_eq!(c.roll(Some(2)), w(3));
+        assert_eq!(c.roll(Some(3)), w(4));
+        assert_eq!(c.roll(Some(4)), w(5));
+        assert_eq!(c.roll(Some(5)), w(6));
+        assert_eq!(c.roll(Some(6)), w(1)); // rolled over
     }
 
     #[test]
@@ -290,13 +296,13 @@ mod tests {
 
         assert_eq!(c.items.len(), 3);
 
-        assert_eq!(c.roll(Some(0)), Some(1));
-        assert_eq!(c.roll(Some(98)), Some(1));
-        assert_eq!(c.roll(Some(99)), Some(1));
-        assert_eq!(c.roll(Some(100)), Some(2));
-        assert_eq!(c.roll(Some(101)), Some(3));
-        assert_eq!(c.roll(Some(200)), Some(3));
-        assert_eq!(c.roll(Some(230)), Some(1)); // rolled over
+        assert_eq!(c.roll(Some(0)), w(1));
+        assert_eq!(c.roll(Some(98)), w(1));
+        assert_eq!(c.roll(Some(99)), w(1));
+        assert_eq!(c.roll(Some(100)), w(2));
+        assert_eq!(c.roll(Some(101)), w(3));
+        assert_eq!(c.roll(Some(200)), w(3));
+        assert_eq!(c.roll(Some(230)), w(1)); // rolled over
     }
 
     #[test]
@@ -312,11 +318,11 @@ mod tests {
 
         assert_eq!(c.items.len(), 2);
 
-        assert_eq!(c.roll(Some(0)), Some(1));
-        assert_eq!(c.roll(Some(9)), Some(1));
-        assert_eq!(c.roll(Some(19)), Some(1));
-        assert_eq!(c.roll(Some(20)), Some(2));
-        assert_eq!(c.roll(Some(29)), Some(1)); // rolled over
+        assert_eq!(c.roll(Some(0)), w(1));
+        assert_eq!(c.roll(Some(9)), w(1));
+        assert_eq!(c.roll(Some(19)), w(1));
+        assert_eq!(c.roll(Some(20)), w(2));
+        assert_eq!(c.roll(Some(29)), w(1)); // rolled over
     }
 
     #[test]
