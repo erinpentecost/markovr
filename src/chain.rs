@@ -35,6 +35,14 @@ impl MarkovChain {
         }
     }
 
+    fn to_key(order: usize, view: &[u64]) -> Vec<u64> {
+        view.into_iter()
+            .skip(view.len() - order)
+            .take(order)
+            .cloned()
+            .collect()
+    }
+
     /// Feeds training data into the model.
     ///
     /// 'view' is the sliding window of elements to load
@@ -46,23 +54,17 @@ impl MarkovChain {
     /// 'weight_delta' should be the number of times we're
     /// loading this view into the model (typically 1 at
     /// a time).
-    pub fn train(&mut self, view: &[u64], weight_delta: i32) {
-        let key: Vec<u64> = view
-            .into_iter()
-            .skip(view.len() - self.order - 1)
-            .take(self.order)
-            .cloned()
-            .collect();
-        let face = view[view.len() - 1];
+    pub fn train(&mut self, view: &[u64], result: u64, weight_delta: i32) {
+        let key = MarkovChain::to_key(self.order, view);
 
         self.probability_map
             .entry(key)
             .and_modify(|d| {
-                d.modify(face, weight_delta);
+                d.modify(result, weight_delta);
             })
             .or_insert((|| match u32::try_from(weight_delta).ok() {
                 Some(v) => die::WeightedDie::new(vec![die::WeightedSide {
-                    element: face,
+                    element: result,
                     weight: v,
                 }]),
                 None => die::WeightedDie::new(vec![]),
@@ -76,16 +78,23 @@ impl MarkovChain {
     ///
     /// roll allows for a deterministic result, if supplied.
     pub fn generate(&self, view: &[u64], roll: Option<u64>) -> Option<u64> {
-        let key: Vec<u64> = view
-            .into_iter()
-            .skip(view.len() - self.order)
-            .take(self.order)
-            .cloned()
-            .collect();
+        let key = MarkovChain::to_key(self.order, view);
 
         match self.probability_map.get(&key) {
             Some(v) => v.roll(roll),
             None => None,
+        }
+    }
+
+    /// Returns the probability of getting 'result', given
+    /// 'view'.
+    pub fn probability(&self, view: &[u64], result: u64) -> f32 {
+        let key = MarkovChain::to_key(self.order, view);
+
+        let map = self.probability_map.get_key_value(&key);
+        match map {
+            Some(v) => v.1.get_probability(result),
+            None => 0.0,
         }
     }
 }
@@ -128,7 +137,7 @@ mod tests {
             .collect();
 
         for i in m.order..encoded.len() {
-            m.train(&[encoded[i - 1], encoded[i]], 1);
+            m.train(&[encoded[i - 1]], encoded[i], 1);
         }
 
         for i in 0..(encoded.len() - 1) {
@@ -159,7 +168,7 @@ mod tests {
             .collect();
 
         for i in m.order..encoded.len() {
-            m.train(&[encoded[i - 2], encoded[i - 1], encoded[i]], 1);
+            m.train(&[encoded[i - 2], encoded[i - 1]], encoded[i], 1);
         }
 
         for i in 1..(encoded.len() - 1) {

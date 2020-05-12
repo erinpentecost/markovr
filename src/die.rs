@@ -40,10 +40,20 @@ impl WeightedDie {
         tmp
     }
 
-    fn find_first(&mut self, element: u64) -> Option<(usize, &mut WeightedSide)> {
+    fn find_first_mut(&mut self, element: u64) -> Option<(usize, &mut WeightedSide)> {
         let found_val = self
             .items
             .iter_mut()
+            .enumerate()
+            .filter(|v| v.1.element == element)
+            .next();
+        found_val
+    }
+
+    fn find_first(&self, element: u64) -> Option<(usize, &WeightedSide)> {
+        let found_val = self
+            .items
+            .iter()
             .enumerate()
             .filter(|v| v.1.element == element)
             .next();
@@ -73,7 +83,7 @@ impl WeightedDie {
     /// Returns the probability of rolling the selected side.
     /// If the die does not contain the side, returns 0.
     /// This will be off since floats aren't exact sometimes.
-    pub fn get_probability(&mut self, element: u64) -> f32 {
+    pub fn get_probability(&self, element: u64) -> f32 {
         match self.find_first(element) {
             Some(v) => {
                 // if there is some found element, then
@@ -98,31 +108,13 @@ impl WeightedDie {
             .collect();
     }
 
-    pub fn sides(&self) -> Vec<WeightedSide> {
-        self.items.clone()
-    }
-
-    /// Removes and returns the given side, if it exists.
-    pub fn remove(&mut self, elem: u64) -> Option<WeightedSide> {
-        let found = self.find_first(elem);
-        match found {
-            Some(v) => {
-                let pop_idx = v.0;
-                let side = self.items.remove(pop_idx);
-                self.update_running_weights();
-                Some(side)
-            }
-            None => None,
-        }
-    }
-
     /// Modifies the weight of an element in the collection.
     /// If it doesn't exist, will add to the collection.
     /// If the new weight would be less than 0, removes
     /// the element from the collection.
     /// Runs in O(n).
     pub fn modify(&mut self, elem: u64, weight_delta: i32) {
-        let found = self.find_first(elem);
+        let found = self.find_first_mut(elem);
         let abs_delta_try = u32::try_from(weight_delta.abs()).ok();
         match found {
             Some(v) => {
