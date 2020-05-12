@@ -18,38 +18,44 @@ Alternatively, if you don't want to bring in the [rand](https://crates.io/crates
 markovr = {version = "0.2", features = []}
 ```
 
-Then it's as simple as this:
+And then, in your program:
 
 ```rust
-// Create a new, first-order Markov Chain.
-let mut m = MarkovChain::new(1);
+extern crate markovr;
 
-// Create a two-way mapping between your input data and u64s.
-// Each of your inputs needs a unique u64 value.
-// std::Hash can be your friend here, but let's do it ourselves.
+pub fn main() {
+    // Create a new, first-order Markov Chain.
+    let mut m = markovr::MarkovChain::new(1);
 
-// alpha will be both our encoding mapping and training data.
-let alpha: Vec<char> = "abcdefghijklmnopqrstuvwxyz".chars().collect();
-// encoded is a parallel Vec to alpha that contains the u64 unique ids
-// for each character.
-let encoded: Vec<u64> = (0..alpha.len()).map(|x| x as u64).collect();
+    // alpha will be both our encoding mapping and training data.
+    // markovr only speaks u64s, so the indices of alpha will be the encoding.
+    let alpha: Vec<char> = "abcdefghijklmnopqrstuvwxyz".chars().collect();
 
-// Train the model.
-for i in m.order..encoded.len() {
-    m.train(&[encoded[i - 1]], encoded[i], 1);
-}
+    // Train the model.
+    for i in 1..alpha.len() {
+        m.train(&[(i - 1) as u64], i as u64, 1);
+    }
 
-// Generate values from the model.
-for i in 0..(encoded.len() - 1) {
-    let next = m.generate(&[encoded[i]].clone());
-    // Since every input has exactly one output, the results
-    // are deterministic.
-    match next {
-        Some(v) => assert_eq!(v, encoded[i + 1]),
-        None => panic!(
-            "can't predict next letter after {} (encoded as {})",
-            alpha[i], encoded[i]
-        ),
-    };
+    // Generate values from the model.
+    let mut last: Option<u64> = Some(0);
+    while last.is_some() {
+        print!("{} ", alpha[last.unwrap() as usize]);
+        last = m.generate(&[last.unwrap()]);
+    }
+    // Prints: a b c d e f g h i j k l m n o p q r s t u v w x y z
+
+    // What's the probability that 'z' follows 'y'?
+    print!("\n{}", m.probability(&[24], 25));
+    // Prints: 1
+    // What's the probability that 'z' follows 'a'?
+    print!("\n{}\n", m.probability(&[0], 25));
+    // Prints: 0
 }
 ```
+
+It's important to note that markovr only handles u64s at the moment.
+
+
+## Future Plans
+
+Support more types than u64 so mapping is not necessary.

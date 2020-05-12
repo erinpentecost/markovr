@@ -14,26 +14,17 @@ pub fn main() {
     }
 
     // Generate values from the model.
-    let mut last: Option<u64> = Some('a');
+    let mut last: Option<u64> = Some(0);
     while last.is_some() {
-        print!("{} ", last.unwrap());
-        // encode the character
-        let encoded_last: u64 = alpha
-            .iter()
-            .enumerate()
-            .filter(|(_i, v)| **v == last.unwrap())
-            .next()
-            .unwrap()
-            .0 as u64;
-        let encoded_next = m.generate(&[encoded_last]);
-        match encoded_next {
-            Some(v) => {
-                last = Some(alpha[v as usize]);
-            }
-            None => {
-                last = None;
-            }
-        }
+        print!("{} ", alpha[last.unwrap() as usize]);
+        last = m.generate(&[last.unwrap()]);
     }
+    // Prints: a b c d e f g h i j k l m n o p q r s t u v w x y z
+
+    // What's the probability that 'z' follows 'y'?
+    print!("\n{}", m.probability(&[24], 25));
+    // Prints: 1
+    // What's the probability that 'z' follows 'a'?
+    print!("\n{}\n", m.probability(&[0], 25));
+    // Prints: 0
 }
-// Prints: a b c d e f g h i j k l m n o p q r s t u v w x y z
