@@ -2,7 +2,7 @@ extern crate markovr;
 
 pub fn main() {
     // Create a new, first-order Markov Chain.
-    let mut m = markovr::MarkovChain::new(1);
+    let mut m = markovr::MarkovChain::new(1, &[]);
 
     // alpha will be our training data.
     let alpha: Vec<char> = "abcdefghijklmnopqrstuvwxyz".chars().collect();
