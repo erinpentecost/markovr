@@ -21,9 +21,9 @@ pub fn main() {
     // Prints: a b c d e f g h i j k l m n o p q r s t u v w x y z
 
     // What's the probability that 'z' follows 'y'?
-    print!("\n{}", m.probability(&['y'], 'z'));
+    print!("\n{}", m.probability(&[Some('y')], 'z'));
     // Prints: 1
     // What's the probability that 'z' follows 'a'?
-    print!("\n{}\n", m.probability(&['a'], 'z'));
+    print!("\n{}\n", m.probability(&[Some('a')], 'z'));
     // Prints: 0
 }
