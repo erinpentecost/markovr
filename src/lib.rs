@@ -118,12 +118,10 @@ impl<T: Element> MarkovChain<T> {
                 .and_modify(|d| {
                     d.modify(result, weight_delta);
                 })
-                .or_insert((|| match u32::try_from(weight_delta).ok() {
-                    Some(v) => die::WeightedDie::new(vec![die::WeightedSide {
-                        element: result,
-                        weight: v,
-                    }]),
-                    None => die::WeightedDie::new(vec![]),
+                .or_insert((|| {
+                    let mut d = die::WeightedDie::new();
+                    d.modify(result, weight_delta);
+                    d
                 })());
         }
     }
