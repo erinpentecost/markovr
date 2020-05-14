@@ -6,24 +6,13 @@ use rand::Rng;
 
 use super::Element;
 
-/// A side, or face, of a die.
-/// element is a unique id for the face.
-/// weight contributes to the chance of this
-/// face being selected, compared to others.
-/// R weight of 0 means the face won't ever be rolled.
-#[derive(Copy, Clone, Eq, PartialEq)]
-pub struct WeightedSide<T: Element> {
-    pub element: T,
-    pub weight: u32,
-}
-
 /// This is a weighted die. You can add sides (faces),
 /// change their weights, and so on.
 #[derive(Clone, Eq, PartialEq)]
 pub struct WeightedDie<T: Element> {
     /// An element and its probabalistic weight,
     /// compared with its peers.
-    items: Vec<WeightedSide<T>>,
+    items: Vec<T>,
 
     /// Caching running weights in order to support
     /// O(lg n) rolls.
@@ -31,34 +20,22 @@ pub struct WeightedDie<T: Element> {
 }
 
 impl<T: Element> WeightedDie<T> {
-    /// Create a new weighted die with the given sides (faces).
-    /// Runs in O(n).
-    pub fn new(items: Vec<WeightedSide<T>>) -> Self {
-        let mut tmp = WeightedDie::<T> {
-            items: items,
+    /// Create a new weighted die.
+    pub fn new() -> Self {
+        WeightedDie::<T> {
+            items: vec![],
             running_weight: vec![],
-        };
-        tmp.update_running_weights();
-        tmp
+        }
     }
 
-    fn find_first_mut(&mut self, element: T) -> Option<(usize, &mut WeightedSide<T>)> {
-        let found_val = self
-            .items
-            .iter_mut()
-            .enumerate()
-            .filter(|v| v.1.element == element)
-            .next();
-        found_val
-    }
-
-    fn find_first(&self, element: T) -> Option<(usize, &WeightedSide<T>)> {
+    fn find_first(&self, element: T) -> Option<usize> {
         let found_val = self
             .items
             .iter()
             .enumerate()
-            .filter(|v| v.1.element == element)
-            .next();
+            .filter(|v| *v.1 == element)
+            .next()
+            .map(|v| v.0);
         found_val
     }
 
@@ -91,7 +68,7 @@ impl<T: Element> WeightedDie<T> {
                 // if there is some found element, then
                 // running_weight is not empty.
                 Self::less_lossy_divide(
-                    v.1.weight as u64,
+                    self.get_item_weight(v),
                     *self.running_weight.last().unwrap_or(&1),
                 )
             }
@@ -99,66 +76,62 @@ impl<T: Element> WeightedDie<T> {
         }
     }
 
-    fn update_running_weights(&mut self) {
-        self.running_weight = self
-            .items
-            .iter()
-            .scan(0 as u64, |state, &x| {
-                *state += x.weight as u64;
-                Some(*state)
-            })
-            .collect();
+    fn get_item_weight(&self, idx: usize) -> u64 {
+        match idx {
+            0 => self.running_weight[idx],
+            _ => {
+                let prev_weight = self.running_weight.get(idx - 1).unwrap_or(&0);
+                self.running_weight[idx] - prev_weight
+            }
+        }
+    }
+
+    fn modify_weight_by_idx(&mut self, idx: usize, weight_delta: i32) {
+        let abs_delta = u64::try_from(weight_delta.abs()).ok().unwrap_or(0);
+        if weight_delta > 0 {
+            // the delta is positive. simple case.
+            for i in idx..self.running_weight.len() {
+                self.running_weight[i] += abs_delta;
+            }
+        } else {
+            // need to reduce weight for some reason.
+            let cur_weight = self.get_item_weight(idx);
+            if abs_delta >= cur_weight {
+                // need to remove or set to 0 weight
+                for i in idx..self.running_weight.len() {
+                    self.running_weight[i] -= cur_weight;
+                }
+            } else {
+                // don't remove
+                for i in idx..self.running_weight.len() {
+                    self.running_weight[i] -= abs_delta;
+                }
+            }
+        }
     }
 
     /// Modifies the weight of an element in the collection.
     /// If it doesn't exist, will add to the collection.
-    /// If the new weight would be less than 0, removes
-    /// the element from the collection.
     /// Runs in O(n).
     pub fn modify(&mut self, elem: T, weight_delta: i32) {
-        let found = self.find_first_mut(elem);
-        let abs_delta_try = u32::try_from(weight_delta.abs()).ok();
+        let found = self.find_first(elem);
         match found {
             Some(v) => {
-                // In the collction, so modify it.
-                match abs_delta_try {
-                    Some(abs_delta) => {
-                        if weight_delta > 0 {
-                            // the delta is positive. simple case.
-                            v.1.weight += abs_delta;
-                        } else if abs_delta >= v.1.weight {
-                            // the weight delta is negative and really big
-                            let pop_idx = v.0;
-                            self.items.remove(pop_idx);
-                        } else {
-                            // the weight is negative, but not big enough to
-                            // remove the item.
-                            v.1.weight -= abs_delta;
-                        }
-                    }
-                    None => panic!("abs(i32) can't fit into u64?!"),
-                }
+                // In the collection, so modify it.
+                self.modify_weight_by_idx(v, weight_delta);
             }
             None => {
                 // Not in the collection, so add it.
                 if weight_delta > 0 {
-                    match abs_delta_try {
-                        Some(abs_delta) => {
-                            self.items.push(WeightedSide::<T> {
-                                element: elem,
-                                weight: abs_delta,
-                            });
-                        }
-                        None => panic!("abs(i32) can't fit into u64?!"),
-                    }
+                    self.items.push(elem);
+                    let preceding_weight = *self.running_weight.last().unwrap_or(&0);
+                    self.running_weight.push(preceding_weight);
+                    self.modify_weight_by_idx(self.running_weight.len() - 1, weight_delta);
                 } else {
                     // nothing to do at all
                 }
             }
         }
-
-        // now update running weights
-        self.update_running_weights();
     }
 
     /// Select some element from the collection.
@@ -167,13 +140,14 @@ impl<T: Element> WeightedDie<T> {
     /// to rely on a random value.
     /// Runs in O(lg n).
     pub fn roll(&self, roll: Option<u64>) -> Option<T> {
+        let total_weight = *self.running_weight.last().unwrap_or(&0);
+
         // If there is nothing to roll, return nothing.
-        if self.items.len() == 0 {
+        if self.items.len() == 0 || total_weight == 0 {
             return None;
         }
 
         // Figure out the roll value, if supplied.
-        let total_weight = *self.running_weight.last().unwrap_or(&0);
         let roll_result: u64 = match roll {
             Some(r) => r % total_weight,
             None => {
@@ -204,7 +178,7 @@ impl<T: Element> WeightedDie<T> {
                 if one_less <= roll_result {
                     // lt current element, but gte than
                     // the next smallest = we got our match.
-                    return Some(self.items[mid].element);
+                    return Some(self.items[mid]);
                 } else {
                     // further to the left
                     end = mid - 1;
@@ -215,7 +189,7 @@ impl<T: Element> WeightedDie<T> {
             }
         }
 
-        return Some(self.items[start].element);
+        return Some(self.items[start]);
     }
 }
 
@@ -229,24 +203,13 @@ mod tests {
 
     #[test]
     fn empty() {
-        let c: WeightedDie<u64> = WeightedDie::new(vec![]);
+        let c: WeightedDie<u64> = WeightedDie::new();
         assert_eq!(c.roll(Some(0)), None);
     }
 
     #[test]
-    fn one_from_constructor() {
-        let c: WeightedDie<u64> = WeightedDie::new(vec![WeightedSide::<u64> {
-            element: 99,
-            weight: 3,
-        }]);
-        assert_eq!(c.roll(Some(0)), w(99));
-        assert_eq!(c.roll(Some(1)), w(99));
-        assert_eq!(c.roll(Some(2)), w(99));
-    }
-
-    #[test]
     fn one_from_insertion() {
-        let mut c = WeightedDie::new(vec![]);
+        let mut c = WeightedDie::new();
         c.modify(99, 3);
         assert_eq!(c.roll(Some(0)), w(99));
         assert_eq!(c.roll(Some(1)), w(99));
@@ -255,7 +218,7 @@ mod tests {
 
     #[test]
     fn coin() {
-        let mut c = WeightedDie::new(vec![]);
+        let mut c = WeightedDie::new();
         c.modify(1, 1);
         c.modify(2, 1);
 
@@ -268,7 +231,7 @@ mod tests {
 
     #[test]
     fn six_sided_die() {
-        let mut c = WeightedDie::new(vec![]);
+        let mut c = WeightedDie::new();
         c.modify(1, 1);
         c.modify(2, 1);
         c.modify(3, 1);
@@ -289,7 +252,7 @@ mod tests {
 
     #[test]
     fn coin_with_edge() {
-        let mut c = WeightedDie::new(vec![]);
+        let mut c = WeightedDie::new();
         c.modify(1, 100);
         c.modify(2, 1);
         c.modify(3, 100);
@@ -307,7 +270,7 @@ mod tests {
 
     #[test]
     fn modified_weight() {
-        let mut c = WeightedDie::new(vec![]);
+        let mut c = WeightedDie::new();
         c.modify(1, 10);
         c.modify(2, 10);
         c.modify(1, 10);
@@ -315,8 +278,6 @@ mod tests {
         c.modify(2, -5);
         c.modify(3, -10);
         // at this point, we have (1, 20) and (2, 5).
-
-        assert_eq!(c.items.len(), 2);
 
         assert_eq!(c.roll(Some(0)), w(1));
         assert_eq!(c.roll(Some(9)), w(1));
@@ -327,7 +288,7 @@ mod tests {
 
     #[test]
     fn get_prob() {
-        let mut c = WeightedDie::new(vec![]);
+        let mut c = WeightedDie::new();
         c.modify(1, 10);
         c.modify(2, 10);
         c.modify(1, 10);
@@ -335,8 +296,6 @@ mod tests {
         c.modify(2, -5);
         c.modify(3, -10);
         // at this point, we have (1, 20) and (2, 5).
-
-        assert_eq!(c.items.len(), 2);
 
         let tmp = c.get_probability(1);
         assert_eq!(tmp, 20.0 / 25.0);
