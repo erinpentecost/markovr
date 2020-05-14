@@ -1,0 +1,101 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'markovr'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=markovr"
+                ],
+                "filter": {
+                    "name": "markovr",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'tilemap'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=tilemap",
+                    "--package=markovr"
+                ],
+                "filter": {
+                    "name": "tilemap",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'tilemap'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=tilemap",
+                    "--package=markovr"
+                ],
+                "filter": {
+                    "name": "tilemap",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'alphabet'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=alphabet",
+                    "--package=markovr"
+                ],
+                "filter": {
+                    "name": "alphabet",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'alphabet'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=alphabet",
+                    "--package=markovr"
+                ],
+                "filter": {
+                    "name": "alphabet",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
