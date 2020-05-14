@@ -15,14 +15,14 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-markovr = {version = "0.2"}
+markovr = {version = "0.4"}
 ```
 
 Alternatively, if you don't want to bring in the [rand](https://crates.io/crates/rand) crate into your dependency tree:
 
 ```toml
 [dependencies]
-markovr = {version = "0.2", features = []}
+markovr = {version = "0.4", features = []}
 ```
 
 And then, in your program:
