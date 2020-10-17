@@ -9,6 +9,8 @@ Cool features:
 * **Fast generation**. Generating a value from a trained model is done in O(lg N) time, where N is the number of possible outputs for that position.
 * **Optionally Deterministic**. Need more control in your life? Deterministic generation functions are available.
 
+Try it out with `cargo run --example tilemap`
+
 ## Usage
 
 Add this to your `Cargo.toml`:

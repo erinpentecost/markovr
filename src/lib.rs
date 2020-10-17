@@ -1,7 +1,6 @@
 mod die;
 use cfg_if::cfg_if;
 use std::collections::HashMap;
-use std::convert::TryFrom;
 
 pub trait Element: Eq + PartialEq + Copy + Clone + std::hash::Hash {}
 impl<T> Element for T where T: Eq + PartialEq + Copy + Clone + std::hash::Hash {}

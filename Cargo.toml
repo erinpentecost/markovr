@@ -8,7 +8,6 @@ description = "Higher-order Markov Chains."
 readme = "README.md"
 repository = "https://github.com/erinpentecost/markovr"
 license = "GPL-3.0"
-license-file = "LICENSE.md"
 
 [dependencies]
 cfg-if = "0.1.10"
