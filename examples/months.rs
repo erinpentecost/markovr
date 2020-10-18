@@ -2,7 +2,7 @@ extern crate markovr;
 
 pub fn main() {
     // Create a new, second-order Markov Chain for generating month names.
-    let mut m = markovr::MarkovChain::<char>::new(2, &[0, 1]);
+    let mut m = markovr::MarkovChain::<char>::new(2, &[]);
 
     let train: Vec<Vec<char>> = "january
 february
