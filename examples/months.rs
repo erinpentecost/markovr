@@ -17,9 +17,63 @@ october
 november
 december
 nisan
+iyar
+sivan
+tammuz
+av
+elul
+tishri
+marcheshvan
+kislev
+tevet
+shevat
+adar
+muharram
+safar
+rajab
+shaban
+ramadan
+shawwal
+caitra
+vaikasi
+jyestha
+ashada
+sravana
+bhadrapada
+asvina
+kartika
+maargazhi
+pausa
+magha
+chet
+vaisakh
+jeth
+harth
+sawan
+bhadon
+assu
+katak
+maghar
+poh
+magh
+phagun
+gormanuour
+ylir
+morsugur
+porri
+goa
+einmanuour
+harpa
+skerpla
+solmanuour
+heyannir
+tvimanuour
+haustmanuour
 thout
 paopi
 hathor
+koiak
+tooba
 emshir
 paremhat
 paremoude
@@ -27,8 +81,11 @@ pashons
 paoni
 epip
 mesori
+vendemiarie
 brumaire
 frimaire
+nivose
+pluviose
 ventose
 germinal
 floreal
@@ -51,7 +108,7 @@ fructidor
         m.train(&['$', '%'], row[0], 1);
         m.train(&['%', row[0]], row[1], 1);
         // Handle middle characters
-        for c in 2..(row.len() - 1) {
+        for c in 2..(row.len()) {
             m.train(&[row[c - 2], row[c - 1]], train[r][c], 1);
         }
         // Cap the end.
