@@ -2,10 +2,74 @@ mod die;
 use cfg_if::cfg_if;
 use std::collections::HashMap;
 
+#[cfg(feature = "serializer")]
+extern crate serde;
+#[cfg(feature = "serializer")]
+use serde::de::DeserializeOwned;
+#[cfg(feature = "serializer")]
+use serde::{Deserialize, Serialize};
+
+// Element without serialization or debug
+#[cfg(all(not(feature = "serializer"), not(feature = "debug")))]
 pub trait Element: Eq + PartialEq + Copy + Clone + std::hash::Hash {}
+#[cfg(all(not(feature = "serializer"), not(feature = "debug")))]
 impl<T> Element for T where T: Eq + PartialEq + Copy + Clone + std::hash::Hash {}
 
+// Element with serialization and no debug
+#[cfg(all(feature = "serializer", not(feature = "debug")))]
+pub trait Element:
+    Eq + PartialEq + Copy + Clone + std::hash::Hash + serde::Serialize + DeserializeOwned
+{
+}
+#[cfg(all(feature = "serializer", not(feature = "debug")))]
+impl<T> Element for T where
+    T: Eq + PartialEq + Copy + Clone + std::hash::Hash + serde::Serialize + DeserializeOwned
+{
+}
+
+// Element with debug and no serialization
+#[cfg(all(not(feature = "serializer"), feature = "debug"))]
+pub trait Element: Eq + PartialEq + Copy + Clone + std::hash::Hash + std::fmt::Debug {}
+#[cfg(all(not(feature = "serializer"), feature = "debug"))]
+impl<T> Element for T where T: Eq + PartialEq + Copy + Clone + std::hash::Hash + std::fmt::Debug {}
+
+// Element with both serialization and debug
+#[cfg(all(feature = "serializer", feature = "debug"))]
+pub trait Element:
+    Eq
+    + PartialEq
+    + Copy
+    + Clone
+    + std::hash::Hash
+    + serde::Serialize
+    + DeserializeOwned
+    + std::fmt::Debug
+{
+}
+#[cfg(all(feature = "serializer", feature = "debug"))]
+impl<T> Element for T where
+    T: Eq
+        + PartialEq
+        + Copy
+        + Clone
+        + std::hash::Hash
+        + serde::Serialize
+        + DeserializeOwned
+        + std::fmt::Debug
+{
+}
+
+#[cfg(all(feature = "serializer", feature = "debug", test))]
+mod serialization_tests;
+
 /// Variable-order Markov chain.
+#[derive(Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "serializer", derive(Debug))]
+#[cfg_attr(feature = "serializer", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serializer",
+    serde(bound = "T: Serialize, for<'t> T: Deserialize<'t>")
+)]
 pub struct MarkovChain<T: Element> {
     // the 'memory' for the MarkovChain chain.
     // 1 is the typical MarkovChain chain that only looks

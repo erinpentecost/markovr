@@ -1,17 +1,26 @@
 [package]
 name = "markovr"
-version = "0.4.1"
+version = "0.5.0"
 authors = ["erinpentecost <erin@pentecost.email>"]
 edition = "2018"
 publish = true
 description = "Higher-order Markov Chains."
 readme = "README.md"
 repository = "https://github.com/erinpentecost/markovr"
-license = "GPL-3.0"
+license = "MIT/GPL-3.0"
+keywords = ["markov"]
 
 [dependencies]
 cfg-if = "0.1.10"
 rand = { version = "0.7.3", optional = true}
+serde = { version = "1.0", optional = true, features = ["derive"] }
+
+[dev-dependencies]
+ron = "0.6.0"
 
 [features]
 default = ["rand"]
+serializer = ["serde"]
+debug = []
+
+all = ["rand", "serializer", "debug"]

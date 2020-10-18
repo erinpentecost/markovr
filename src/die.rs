@@ -4,11 +4,19 @@ use std::convert::TryFrom;
 #[cfg(feature = "rand")]
 use rand::Rng;
 
+#[cfg(feature = "serializer")]
+use serde::{Deserialize, Serialize};
+
 use super::Element;
 
 /// This is a weighted die. You can add sides (faces),
 /// change their weights, and so on.
 #[derive(Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "serializer", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serializer",
+    serde(bound = "T: Serialize, for<'t> T: Deserialize<'t>")
+)]
 pub struct WeightedDie<T: Element> {
     /// An element and its probabalistic weight,
     /// compared with its peers.
@@ -17,6 +25,12 @@ pub struct WeightedDie<T: Element> {
     /// Caching running weights in order to support
     /// O(lg n) rolls.
     running_weight: Vec<u64>,
+}
+
+impl<T: Element> std::fmt::Debug for WeightedDie<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Element")
+    }
 }
 
 impl<T: Element> WeightedDie<T> {

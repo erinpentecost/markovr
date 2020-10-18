@@ -2,7 +2,7 @@ extern crate markovr;
 
 pub fn main() {
     // Create a new, second-order Markov Chain for generating month names.
-    let mut m = markovr::MarkovChain::<char>::new(2, &[0,1]);
+    let mut m = markovr::MarkovChain::<char>::new(2, &[0, 1]);
 
     let train: Vec<Vec<char>> = "january
 february
@@ -55,7 +55,7 @@ fructidor
             m.train(&[row[c - 2], row[c - 1]], train[r][c], 1);
         }
         // Cap the end.
-        m.train(&[row[row.len()-2], row[row.len()-1]], ' ', 1);
+        m.train(&[row[row.len() - 2], row[row.len() - 1]], ' ', 1);
     }
 
     // Generate values from the model.
@@ -64,12 +64,11 @@ fructidor
             let mut month = Vec::new();
             let mut lastlast = Some('%');
             let mut last: Option<char> = m.generate_from_partial(&[Some('$'), Some('%')]);
-            while let Some(c) = last{
+            while let Some(c) = last {
                 // Did we end?
-                if c == ' '{
+                if c == ' ' {
                     break;
-                }
-                else {
+                } else {
                     // Tack on the character
                     month.push(c);
                     // Find the next character

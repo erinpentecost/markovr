@@ -8,6 +8,7 @@ Cool features:
 * **Partial-view element generation**. Missing an input during generation? No problem.
 * **Fast generation**. Generating a value from a trained model is done in O(lg N) time, where N is the number of possible outputs for that position.
 * **Optionally Deterministic**. Need more control in your life? Deterministic generation functions are available.
+* **Serializable** with optional [serde])(https://serde.rs/) support: `markovr = {version = "0.5", features = [serialization]}`.
 
 Try it out with `cargo run --example tilemap`
 
@@ -17,14 +18,14 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-markovr = {version = "0.4"}
+markovr = {version = "0.5"}
 ```
 
 Alternatively, if you don't want to bring in the [rand](https://crates.io/crates/rand) crate into your dependency tree:
 
 ```toml
 [dependencies]
-markovr = {version = "0.4", features = []}
+markovr = {version = "0.5", features = []}
 ```
 
 And then, in your program:
